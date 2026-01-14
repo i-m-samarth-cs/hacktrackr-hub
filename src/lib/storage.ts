@@ -1,5 +1,5 @@
 // Local Storage utilities for HackTrackr
-// This will be replaced with Lovable Cloud backend
+// This can be replaced with a cloud backend (e.g. your own API)
 
 import { HackathonEvent, Quiz } from '@/types';
 

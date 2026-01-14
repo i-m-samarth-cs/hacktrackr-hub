@@ -104,7 +104,7 @@ export default function Settings() {
 
           <div className="bg-muted/50 rounded-lg p-4">
             <p className="text-sm text-muted-foreground mb-3">
-              Currently using local storage. Connect to Lovable Cloud for:
+              Currently using local storage. Connect to a cloud backend for:
             </p>
             <ul className="text-sm text-muted-foreground space-y-1 mb-4">
               <li>• Database persistence</li>
