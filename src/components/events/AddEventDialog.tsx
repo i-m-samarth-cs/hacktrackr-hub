@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { HackathonEvent, Platform, EventMode, EventStatus } from '@/types';
+import { HackathonEvent, Platform, EventMode, EventStatus, Deadline, DeadlineType } from '@/types';
 import { generateId } from '@/lib/storage';
 
 const platforms: Platform[] = [
@@ -66,14 +66,31 @@ interface AddEventDialogProps {
   initialData?: HackathonEvent;
 }
 
+const deadlineTypes: DeadlineType[] = [
+  'registration', 'idea', 'ppt', 'code', 'demo', 'final', 'result'
+];
+
 export function AddEventDialog({ 
   open, 
   onOpenChange, 
   onSubmit, 
   initialData 
 }: AddEventDialogProps) {
-  const [tags, setTags] = useState<string[]>(initialData?.tags || []);
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+
+  // Reset state when dialog opens/closes or initialData changes
+  useEffect(() => {
+    if (open) {
+      setTags(initialData?.tags || []);
+      setDeadlines(initialData?.deadlines || []);
+    } else {
+      setTags([]);
+      setDeadlines([]);
+      setTagInput('');
+    }
+  }, [open, initialData]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -115,6 +132,28 @@ export function AddEventDialog({
     setTags(tags.filter(t => t !== tag));
   };
 
+  const handleAddDeadline = () => {
+    const newDeadline: Deadline = {
+      id: generateId(),
+      type: 'registration',
+      datetime: new Date().toISOString(),
+      reminderEnabled: true,
+      reminderOffsets: [24, 6, 1],
+      completed: false,
+    };
+    setDeadlines([...deadlines, newDeadline]);
+  };
+
+  const handleRemoveDeadline = (deadlineId: string) => {
+    setDeadlines(deadlines.filter(d => d.id !== deadlineId));
+  };
+
+  const handleUpdateDeadline = (deadlineId: string, updates: Partial<Deadline>) => {
+    setDeadlines(deadlines.map(d => 
+      d.id === deadlineId ? { ...d, ...updates } : d
+    ));
+  };
+
   const handleSubmit = (data: FormData) => {
     const event: HackathonEvent = {
       id: initialData?.id || generateId(),
@@ -130,7 +169,7 @@ export function AddEventDialog({
       prizePool: data.prizePool || undefined,
       status: data.status,
       tags,
-      deadlines: initialData?.deadlines || [],
+      deadlines,
       checklist: initialData?.checklist || [],
       result: initialData?.result,
       createdAt: initialData?.createdAt || new Date().toISOString(),
@@ -140,6 +179,7 @@ export function AddEventDialog({
     onOpenChange(false);
     form.reset();
     setTags([]);
+    setDeadlines([]);
   };
 
   return (
@@ -359,6 +399,98 @@ export function AddEventDialog({
                           <X className="w-3 h-3" />
                         </button>
                       </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Deadlines Section */}
+              <div className="col-span-2 space-y-3">
+                <div className="flex items-center justify-between">
+                  <FormLabel>Deadlines</FormLabel>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleAddDeadline}
+                    className="gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Deadline
+                  </Button>
+                </div>
+                {deadlines.length === 0 ? (
+                  <div className="text-sm text-muted-foreground p-4 border border-dashed border-border rounded-lg text-center">
+                    No deadlines added. Click "Add Deadline" to add registration, submission, or other important dates.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {deadlines.map((deadline) => (
+                      <div 
+                        key={deadline.id} 
+                        className="p-4 border border-border rounded-lg space-y-3 bg-muted/30"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-sm font-medium mb-1 block">Deadline Type</label>
+                              <Select
+                                value={deadline.type}
+                                onValueChange={(value: DeadlineType) => 
+                                  handleUpdateDeadline(deadline.id, { type: value })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {deadlineTypes.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium mb-1 block">Date & Time</label>
+                              <Input
+                                type="datetime-local"
+                                value={deadline.datetime ? new Date(deadline.datetime).toISOString().slice(0, 16) : ''}
+                                onChange={(e) => {
+                                  const dateValue = e.target.value;
+                                  if (dateValue) {
+                                    const isoString = new Date(dateValue).toISOString();
+                                    handleUpdateDeadline(deadline.id, { datetime: isoString });
+                                  }
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveDeadline(deadline.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={deadline.reminderEnabled}
+                            onChange={(e) => 
+                              handleUpdateDeadline(deadline.id, { reminderEnabled: e.target.checked })
+                            }
+                            className="rounded"
+                          />
+                          <label className="text-sm text-muted-foreground">
+                            Enable email reminders for this deadline
+                          </label>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}

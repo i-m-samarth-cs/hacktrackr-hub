@@ -47,24 +47,29 @@ export default function CalendarPage() {
   }, []);
 
   // Generate calendar events from hackathon deadlines and quizzes
+  // Filter out completed deadlines
   const calendarEvents: CalendarEvent[] = [
     ...events.flatMap(event => 
-      event.deadlines.map(deadline => ({
-        id: `${event.id}-${deadline.id}`,
-        title: `${event.title} - ${deadline.type}`,
-        type: 'deadline' as const,
-        datetime: deadline.datetime,
-        deadlineType: deadline.type,
-        color: 'bg-primary',
-      }))
+      event.deadlines
+        .filter(deadline => !deadline.completed) // Only show incomplete deadlines
+        .map(deadline => ({
+          id: `${event.id}-${deadline.id}`,
+          title: `${event.title} - ${deadline.type.charAt(0).toUpperCase() + deadline.type.slice(1)}`,
+          type: 'deadline' as const,
+          datetime: deadline.datetime,
+          deadlineType: deadline.type,
+          color: 'bg-primary',
+        }))
     ),
-    ...quizzes.map(quiz => ({
-      id: quiz.id,
-      title: quiz.quizName,
-      type: 'quiz' as const,
-      datetime: quiz.datetime,
-      color: 'bg-accent',
-    })),
+    ...quizzes
+      .filter(quiz => !quiz.completed) // Only show incomplete quizzes
+      .map(quiz => ({
+        id: quiz.id,
+        title: quiz.quizName,
+        type: 'quiz' as const,
+        datetime: quiz.datetime,
+        color: 'bg-accent',
+      })),
   ];
 
   const monthStart = startOfMonth(currentMonth);
@@ -74,9 +79,14 @@ export default function CalendarPage() {
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
   const getEventsForDay = (day: Date) => {
-    return calendarEvents.filter(event => 
-      isSameDay(new Date(event.datetime), day)
-    );
+    return calendarEvents.filter(event => {
+      try {
+        const eventDate = new Date(event.datetime);
+        return isSameDay(eventDate, day);
+      } catch {
+        return false;
+      }
+    });
   };
 
   const selectedDayEvents = selectedDate ? getEventsForDay(selectedDate) : [];
@@ -215,8 +225,10 @@ export default function CalendarPage() {
                             </span>
                           </div>
                         </div>
-                        <Badge variant="secondary" className="text-xs">
-                          {event.type === 'deadline' ? event.deadlineType : 'Quiz'}
+                        <Badge variant="secondary" className="text-xs capitalize">
+                          {event.type === 'deadline' 
+                            ? event.deadlineType?.charAt(0).toUpperCase() + event.deadlineType?.slice(1) 
+                            : 'Quiz'}
                         </Badge>
                       </div>
                     </motion.div>
