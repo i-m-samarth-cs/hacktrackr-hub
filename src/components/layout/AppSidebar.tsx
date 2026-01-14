@@ -11,14 +11,12 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Target,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { title: 'Dashboard', icon: LayoutDashboard, path: '/' },
   { title: 'Hackathons', icon: Trophy, path: '/hackathons' },
-  { title: 'Competitions', icon: Target, path: '/competitions' },
   { title: 'Quiz Tracker', icon: BookOpen, path: '/quizzes' },
   { title: 'Calendar', icon: Calendar, path: '/calendar' },
   { title: 'Leaderboard', icon: Medal, path: '/leaderboard' },

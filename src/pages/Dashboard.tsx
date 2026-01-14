@@ -34,14 +34,39 @@ export default function Dashboard() {
     setQuizzes(getQuizzes());
   }, []);
 
+  // Refresh data when window gains focus (user switches back to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      setEvents(getEvents());
+      setQuizzes(getQuizzes());
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   const upcomingDeadlines = events
     .flatMap(event => 
-      event.deadlines
-        .filter(d => !d.completed && isAfter(new Date(d.datetime), new Date()))
+      (event.deadlines || [])
+        .filter(d => {
+          if (d.completed) return false;
+          try {
+            const deadlineDate = new Date(d.datetime);
+            return !isNaN(deadlineDate.getTime()) && isAfter(deadlineDate, new Date());
+          } catch {
+            return false;
+          }
+        })
         .map(d => ({ ...d, eventTitle: event.title, eventId: event.id }))
     )
-    .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())
-    .slice(0, 5);
+    .sort((a, b) => {
+      try {
+        return new Date(a.datetime).getTime() - new Date(b.datetime).getTime();
+      } catch {
+        return 0;
+      }
+    })
+    .slice(0, 10);
 
   const stats: LeaderboardStats = {
     totalJoined: events.length,
@@ -82,7 +107,7 @@ export default function Dashboard() {
           <div>
             <h1 className="font-display text-3xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
-              Track your hackathons, competitions, and quizzes
+              Track your hackathons and quizzes
             </p>
           </div>
           <Button onClick={() => setShowAddEvent(true)} className="gradient-primary gap-2">
