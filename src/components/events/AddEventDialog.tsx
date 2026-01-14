@@ -55,6 +55,7 @@ const formSchema = z.object({
   description: z.string().optional(),
   prizePool: z.string().optional(),
   status: z.enum(['Planning', 'Registered', 'Working', 'Submitted', 'ResultAwaited', 'Completed']),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -106,6 +107,7 @@ export function AddEventDialog({
       description: initialData.description || '',
       prizePool: initialData.prizePool || '',
       status: initialData.status,
+      email: (initialData as any).email || '',
     } : {
       title: '',
       sourcePlatform: 'Unstop',
@@ -118,6 +120,7 @@ export function AddEventDialog({
       description: '',
       prizePool: '',
       status: 'Planning',
+      email: '',
     },
   });
 
@@ -155,7 +158,7 @@ export function AddEventDialog({
   };
 
   const handleSubmit = (data: FormData) => {
-    const event: HackathonEvent = {
+    const event: HackathonEvent & { email?: string } = {
       id: initialData?.id || generateId(),
       title: data.title,
       sourcePlatform: data.sourcePlatform,
@@ -172,6 +175,7 @@ export function AddEventDialog({
       deadlines,
       checklist: initialData?.checklist || [],
       result: initialData?.result,
+      email: data.email || undefined,
       createdAt: initialData?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -334,6 +338,23 @@ export function AddEventDialog({
                     <FormControl>
                       <Input placeholder="e.g., $10,000 USD" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Email for Reminders</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="your-email@example.com" {...field} />
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      Email address to receive deadline reminders (3 days before)
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}

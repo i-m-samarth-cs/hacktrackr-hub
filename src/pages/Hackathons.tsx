@@ -59,6 +59,11 @@ export default function Hackathons() {
     setEditEvent(null);
   };
 
+  const handleUpdateEvent = (event: HackathonEvent) => {
+    updateEvent(event);
+    setEvents(getEvents());
+  };
+
   return (
     <MainLayout>
       <div className="p-6 lg:p-8 space-y-6">
@@ -177,6 +182,7 @@ export default function Hackathons() {
                   event={event}
                   onView={() => {}}
                   onEdit={() => setEditEvent(event)}
+                  onUpdate={handleUpdateEvent}
                 />
               </motion.div>
             ))}

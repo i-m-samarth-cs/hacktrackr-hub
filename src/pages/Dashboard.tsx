@@ -19,7 +19,7 @@ import { EventCard } from '@/components/events/EventCard';
 import { AddEventDialog } from '@/components/events/AddEventDialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { getEvents, addEvent, getQuizzes } from '@/lib/storage';
+import { getEvents, addEvent, updateEvent, getQuizzes } from '@/lib/storage';
 import { HackathonEvent, Quiz, Deadline, LeaderboardStats } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -59,6 +59,11 @@ export default function Dashboard() {
 
   const handleAddEvent = (event: HackathonEvent) => {
     addEvent(event);
+    setEvents(getEvents());
+  };
+
+  const handleUpdateEvent = (event: HackathonEvent) => {
+    updateEvent(event);
     setEvents(getEvents());
   };
 
@@ -241,6 +246,7 @@ export default function Dashboard() {
                   key={event.id}
                   event={event}
                   onView={() => navigate(`/hackathons/${event.id}`)}
+                  onUpdate={handleUpdateEvent}
                 />
               ))}
             </div>

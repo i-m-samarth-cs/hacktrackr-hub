@@ -7,7 +7,9 @@ import {
   ExternalLink, 
   MoreVertical,
   MapPin,
-  Trophy
+  Trophy,
+  CheckCircle2,
+  CheckCircle
 } from 'lucide-react';
 import { HackathonEvent } from '@/types';
 import { PlatformBadge } from '@/components/ui/platform-badge';
@@ -20,12 +22,32 @@ interface EventCardProps {
   event: HackathonEvent;
   onView?: (event: HackathonEvent) => void;
   onEdit?: (event: HackathonEvent) => void;
+  onUpdate?: (event: HackathonEvent) => void;
 }
 
-export function EventCard({ event, onView, onEdit }: EventCardProps) {
+export function EventCard({ event, onView, onEdit, onUpdate }: EventCardProps) {
   const nextDeadline = event.deadlines
     .filter(d => !d.completed && new Date(d.datetime) > new Date())
     .sort((a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime())[0];
+
+  const handleMarkDeadlineComplete = (deadlineId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updatedDeadlines = event.deadlines.map(d => 
+      d.id === deadlineId ? { ...d, completed: true } : d
+    );
+    const updatedEvent = { ...event, deadlines: updatedDeadlines, updatedAt: new Date().toISOString() };
+    onUpdate?.(updatedEvent);
+  };
+
+  const handleMarkSubmissionDone = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updatedEvent = { 
+      ...event, 
+      status: 'Submitted' as const,
+      updatedAt: new Date().toISOString() 
+    };
+    onUpdate?.(updatedEvent);
+  };
 
   const getUrgencyClass = () => {
     if (!nextDeadline) return '';
@@ -107,14 +129,55 @@ export function EventCard({ event, onView, onEdit }: EventCardProps) {
                 {nextDeadline.type} Deadline
               </span>
             </div>
-            <span className="text-sm text-muted-foreground">
-              {format(new Date(nextDeadline.datetime), 'MMM dd, HH:mm')}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {format(new Date(nextDeadline.datetime), 'MMM dd, HH:mm')}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={(e) => handleMarkDeadlineComplete(nextDeadline.id, e)}
+                title="Mark deadline as completed"
+              >
+                <CheckCircle2 className="w-4 h-4 text-success" />
+              </Button>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             {differenceInDays(new Date(nextDeadline.datetime), new Date())} days left
           </p>
         </div>
+      )}
+
+      {/* Completed Deadlines */}
+      {event.deadlines.filter(d => d.completed).length > 0 && (
+        <div className="mb-4 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">Completed Deadlines:</p>
+          <div className="flex flex-wrap gap-2">
+            {event.deadlines
+              .filter(d => d.completed)
+              .map(deadline => (
+                <Badge key={deadline.id} variant="outline" className="text-xs gap-1">
+                  <CheckCircle className="w-3 h-3 text-success" />
+                  {deadline.type.charAt(0).toUpperCase() + deadline.type.slice(1)}
+                </Badge>
+              ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mark Submission Button */}
+      {event.status !== 'Submitted' && event.status !== 'Completed' && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mb-4 gap-2"
+          onClick={(e) => handleMarkSubmissionDone(e)}
+        >
+          <CheckCircle2 className="w-4 h-4" />
+          Mark Submission Done
+        </Button>
       )}
 
       {/* Progress Bar */}
